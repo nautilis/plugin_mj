@@ -21,13 +21,14 @@ class Mj():
     def __init__(self, base_url, module):
         self.base_url = base_url
         self.pre_prompt = ""
-        self.status = ""  # drawing 使用id 查询， using 使用 useid 查询； done => 绘制完成，可以进入 using 或者 v 状态
+        self.status = ""  # drawing 使用id 查询， using 使用 useid 查询； done => 绘制完成，可以进入 using 或者 v 状态,
         self.process = 0
         self.img = None
         self.id = None
         self.useid = None
         self.module = module
         self.status = ""
+        self.pic_b64 = ""
 
     def draw(self, context: Context):
         if self.status == "drawing" or self.status == "using":
@@ -91,7 +92,12 @@ class Mj():
             if context.type == ContextType.TEXT:
                 logger.info("[MJ] recive text: " + context.content)
                 self.pre_prompt = context.content
-                data_body = {**self.module.get("IMAGINE")["body"], **{"prompt": self.pre_prompt}}
+                if self.pic_b64 != "":
+                    data_body = {**self.module.get("IMAGINE")["body"],
+                                 **{"prompt": self.pre_prompt, "base64": "data:image/png;base64," + self.pic_b64}}
+                else:
+                    data_body = {**self.module.get("IMAGINE")["body"],
+                                 **{"prompt": self.pre_prompt, "base64": ""}}
                 respone = self.method_respone("IMAGINE", **data_body)
                 if respone.status_code == 200:
                     if respone.json()["code"] == 1:
@@ -108,15 +114,17 @@ class Mj():
             elif context.type == ContextType.IMAGE:
                 with open(context.content, "rb") as f:
                     img = base64.b64encode(f.read()).decode()
-                data_body = {**self.module.get("IMAGINE")["body"], **{"prompt": self.pre_prompt, "base64": img}}
-                respone = self.method_respone("IMAGINE", **data_body)
-                if respone.status_code == 200:
-                    self.id = respone.json()['result']
-                    reply = Reply(ReplyType.INFO,
-                                  "开始生成图像！本次prompt:" + self.pre_prompt + "，本次ID：" + self.id + ",生成一般需要等待30s，请等待一段时间后回复任意消息获得结果")
-                    self.work = True
-                else:
-                    reply = Reply(ReplyType.ERROR, "生成失败，请重试。失败原因：" + respone.json()['failReason'])
+                self.pic_b64 = img
+                reply = Reply(ReplyType.INFO, "图片已接受，请求输入其他描述")
+                # data_body = {**self.module.get("IMAGINE")["body"], **{"prompt": self.pre_prompt, "base64": img}}
+                # respone = self.method_respone("IMAGINE", **data_body)
+                # if respone.status_code == 200:
+                #    self.id = respone.json()['result']
+                #    reply = Reply(ReplyType.INFO,
+                #                  "开始生成图像！本次prompt:" + self.pre_prompt + "，本次ID：" + self.id + ",生成一般需要等待30s，请等待一段时间后回复任意消息获得结果")
+                #    self.work = True
+                # else:
+                #    reply = Reply(ReplyType.ERROR, "生成失败，请重试。失败原因：" + respone.json()['failReason'])
             return reply
 
     def method_respone(self, op_name, **kwargs):
@@ -193,6 +201,9 @@ class MidJourney(Plugin):
                 e_context["reply"] = reply
                 e_context.action = EventAction.BREAK_PASS
                 return
+        elif content_type == ContextType.IMAGE:
+            cmsg = context["msg"]
+            cmsg.prepare()
         if sessionid in self.prompt_session:
             logger.debug("[Midjourney] on handle context => {}".format(content))
             reply = self.prompt_session[sessionid].draw(context)  # todo
