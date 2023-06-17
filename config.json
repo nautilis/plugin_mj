@@ -1,0 +1,57 @@
+{
+  "commands": [
+    "help",
+    "start",
+    "stop"
+  ],
+  "base_url": "http://192.168.0.91:9898/mj/",
+  "mj_keywords": {
+    "IMAGINE": {
+      "path": "submit/imagine",
+      "method": "POST",
+      "body": {
+        "base64": "",
+        "notifyHook": "",
+        "prompt": "",
+        "state": ""
+      }
+    },
+    "DESCRIBE": {
+      "path": "submit/describe",
+      "method": "POST"
+    },
+    "BLEND": {
+      "path": "submit/blend",
+      "method": "POST"
+    },
+    "UPSCALE": {
+      "path": "submit/change",
+      "method": "POST",
+      "body": {
+        "action": "UPSCALE",
+        "index": 1,
+        "notifyHook": "",
+        "state": "",
+        "taskId": ""
+      }
+    },
+    "VARIATION": {
+      "path": "submit/change",
+      "method": "POST",
+      "body": {
+        "action": "VARIATION",
+        "index": 1,
+        "notifyHook": "",
+        "state": "",
+        "taskId": ""
+      }
+    },
+    "REROLL": {
+      "path": "submit/change",
+      "method": "POST"
+    },
+    "FETCH": {
+      "path": "task/"
+    }
+  }
+}
